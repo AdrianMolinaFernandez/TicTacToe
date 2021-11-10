@@ -1,14 +1,13 @@
 package com.example.tictactoe
 
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import android.R.array
-import android.util.Log
 
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -253,6 +252,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private var player1Turn = true
+    private var playing = true
 
     private var roundCount = 1
 
@@ -275,46 +275,59 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 buttons[i][j]?.setOnClickListener(this)
             }
         }
+
         val buttonReset = findViewById<Button>(R.id.button_reset)
         buttonReset.setOnClickListener { resetGame() }
 
-        var j = GFG.findBestMove(fieldToBoard()).col
-        var i = GFG.findBestMove(fieldToBoard()).row
+        val j = GFG.findBestMove(fieldToBoard()).col
+        val i = GFG.findBestMove(fieldToBoard()).row
         buttons[i][j]?.setText("X")
     }
 
     override fun onClick(v: View) {
-        if ((v as Button).text.toString() != "") {
+        if ((v as Button).text.toString() != "" || !playing) {
+            if(!playing){
+                playing = true
+                resetBoard()
+            }
             return
         }
-        if (player1Turn) {
+
+
+        jugadaP1(v)
+
+        if(checkForWin()){
+            player1Wins()
+            return
+        }else if(roundCount == 9){
+            draw()
+            return
+        }
+
+        jugadaBot()
+
+        if(checkForWin()){
+            player2Wins()
+            return
+        }else if(roundCount == 9){
+            draw()
+            return
+        }
+
+    }
+
+    private fun jugadaP1(v: View) {
+        (v as Button).text.toString()
             v.setText("O")
             roundCount++
-        }
 
-        if (GFG.evaluate(fieldToBoard()) == 10) {
-            player2Wins()
-        } else if (roundCount == 9) {
-            draw()
-        } else {
-            player1Turn = !player1Turn
-        }
-        if (!player1Turn){
-            var j = GFG.findBestMove(fieldToBoard()).col
-            var i = GFG.findBestMove(fieldToBoard()).row
+    }
+
+    private fun jugadaBot() {
+            val j = GFG.findBestMove(fieldToBoard()).col
+            val i = GFG.findBestMove(fieldToBoard()).row
             buttons[i][j]?.setText("X")
             roundCount++
-
-        }
-        if (GFG.evaluate(fieldToBoard()) == 10) {
-            player2Wins()
-        }else if (roundCount == 9) {
-            draw()
-        } else {
-            player1Turn = !player1Turn
-        }
-
-        println("asdf"+roundCount)
     }
 
     private fun checkForWin(): Boolean {
@@ -333,30 +346,29 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if (field[0][0] == field[1][1] && field[0][0] == field[2][2] && field[0][0] != "") {
             return true
         }
-        return if (field[0][2] == field[1][1] && field[0][2] == field[2][0] && field[0][2] != "") {
-            true
-        } else false
+        return field[0][2] == field[1][1] && field[0][2] == field[2][0] && field[0][2] != ""
     }
 
     private fun player1Wins() {
         player1Points++
         Toast.makeText(this, "PLAYER 1 WINS!", Toast.LENGTH_SHORT).show()
         updatePointsText()
-        resetBoard()
+        playing = false
     }
 
     private fun player2Wins() {
         player2Points++
         Toast.makeText(this, "BOT WINS!", Toast.LENGTH_SHORT).show()
         updatePointsText()
-        resetBoard()
+        playing = false
     }
 
     private fun draw() {
         Toast.makeText(this, "Draw!", Toast.LENGTH_SHORT).show()
-        resetBoard()
+        playing = false
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updatePointsText() {
         textViewPlayer1!!.text = "Player 1: $player1Points"
         textViewPlayer2!!.text = "BOT: $player2Points"
@@ -370,6 +382,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
         roundCount = 0
         player1Turn = true
+        playing = true
     }
 
     private fun resetGame() {
